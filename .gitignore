@@ -104,5 +104,6 @@ venv.bak/
 .mypy_cache/
 
 # html files
+*.htm
 *.html
 *_files

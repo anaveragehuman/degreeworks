@@ -105,18 +105,18 @@ def run(file):
 
     with open(file) as f:
         basedir = realpath(f.name)
-        soup = BeautifulSoup(f, "html.parser")
+        soup = BeautifulSoup(f, features="lxml")
         bodysrc = soup.find("frame", attrs={"name": "frBodyContainer"})["src"]
 
     bodysrc2 = None
     with open(urljoin(basedir, bodysrc)) as f:
         basedir = realpath(f.name)
-        soup = BeautifulSoup(f, "html.parser")
+        soup = BeautifulSoup(f, features="lxml")
         bodysrc2 = soup.find("frame", attrs={"name": "frBody"})["src"]
 
     mainsoup = None
     with open(urljoin(basedir, bodysrc2)) as f:
-        mainsoup = BeautifulSoup(f, "html.parser")
+        mainsoup = BeautifulSoup(f, features="lxml")
 
     return get_reqs(mainsoup)
 
