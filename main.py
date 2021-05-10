@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-COURSE_RE = re.compile("javascript:GetCourseInfo\('(.+?)','(.+?)'\)")
+COURSE_RE = re.compile(r"javascript:GetCourseInfo\('(.+?)','(.+?)'\)")
 Course = namedtuple("Course", ["dept", "num"])
 
 
@@ -74,7 +74,7 @@ def get_reqs(soup: BeautifulSoup) -> Tuple[Dict[Course, str], Dict[str, Set[str]
                 course = Course(cc.dept, f"{front}{pad * '0'}{x}{back}")
                 add_reqs(course)
         elif ":" in cc.num:
-            front, back = [int(i) for i in cc.num.split(":")]
+            front, back = map(int, cc.num.split(":"))
             for i in range(front, back + 1):  # needs to be inclusive
                 add_reqs(Course(cc.dept, i))
 
@@ -92,7 +92,7 @@ def print_dups(
 ) -> None:
     for cc, reqlist in sorted(reqs.items()):
         if len(reqlist) >= min:
-            cname = courses.get(cc)
+            cname = courses[cc]
             code = f"{cc.dept} {cc.num}"
 
             if quiet:
@@ -106,21 +106,16 @@ def print_dups(
 
 
 def run(file: str) -> Tuple[Dict[Course, str], Dict[str, Set[str]]]:
-    bodysrc = None
-    basedir = None
-
     with open(file) as f:
         basedir = realpath(f.name)
         soup = BeautifulSoup(f, features="lxml")
         bodysrc = soup.find("frame", attrs={"name": "frBodyContainer"})["src"]
 
-    bodysrc2 = None
     with open(urljoin(basedir, bodysrc)) as f:
         basedir = realpath(f.name)
         soup = BeautifulSoup(f, features="lxml")
         bodysrc2 = soup.find("frame", attrs={"name": "frBody"})["src"]
 
-    mainsoup = None
     with open(urljoin(basedir, bodysrc2)) as f:
         mainsoup = BeautifulSoup(f, features="lxml")
 
@@ -133,11 +128,9 @@ def main() -> None:
                                     courses that satisfy requirements",
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--quiet", "-q", action="store_true", help="show course codes only")
+    p.add_argument("-q", action="store_true", help="show course codes only")
     p.add_argument(
-        "--reqs",
         "-r",
-        action="store",
         default=2,
         type=int,
         help="minimum number of requirements to satisfy",
@@ -151,7 +144,7 @@ def main() -> None:
 
     args = p.parse_args()
     reqs, courses = run(args.file)
-    print_dups(reqs, courses, args.reqs, args.quiet)
+    print_dups(reqs, courses, args.r, args.q)
 
 
 if __name__ == "__main__":
