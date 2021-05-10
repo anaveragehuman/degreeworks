@@ -2,7 +2,7 @@
 
 import re
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from os.path import realpath
 from typing import Dict, Set, Tuple
 from urllib.parse import urljoin
@@ -45,10 +45,10 @@ def get_reqs(soup: BeautifulSoup) -> Tuple[Dict[Course, str], Dict[str, Set[str]
                     continue
 
                 if "@" in cc.num or ":" in cc.num:
-                    ats.setdefault(cc, set()).add(req)
+                    ats[cc].add(req)
                     continue
 
-                reqs.setdefault(cc, set()).add(req)
+                reqs[cc].add(req)
 
                 if "title" in a.attrs:  # @ doesn't have titles
                     course_desc = a["title"]
@@ -61,7 +61,7 @@ def get_reqs(soup: BeautifulSoup) -> Tuple[Dict[Course, str], Dict[str, Set[str]
             nonlocal keep
 
             if course in reqs:
-                reqs[course] = reqs[course].union(fulfills)
+                reqs[course] |= fulfills
                 keep = False
 
         if "@" in cc.num:
