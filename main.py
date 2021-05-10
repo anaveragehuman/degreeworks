@@ -4,6 +4,7 @@ import re
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import namedtuple
 from os.path import realpath
+from typing import Dict, Set, Tuple
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -12,17 +13,17 @@ COURSE_RE = re.compile("javascript:GetCourseInfo\('(.+?)','(.+?)'\)")
 Course = namedtuple("Course", ["dept", "num"])
 
 
-def parse_js(string):
+def parse_js(string: str) -> Course:
     match = COURSE_RE.match(string)
     return Course(*match.group(1, 2)) if match is not None else None
 
 
-def get_reqs(soup):
+def get_reqs(soup: BeautifulSoup) -> Tuple[Dict[Course, str], Dict[str, Set[str]]]:
     trs = soup.find_all("tr", attrs={"class": "bgLight0"})  # red
 
-    courses = {}  # code, description
-    reqs = {}  # code, fulfills
-    ats = {}  # Course, fulfills
+    courses: Dict[str, str] = {}  # code, description
+    reqs: Dict[str, Set[str]] = defaultdict(set)  # code, fulfills
+    ats: Dict[Course, Set[str]] = defaultdict(set)  # Course, fulfills
 
     req = None
 
@@ -56,7 +57,7 @@ def get_reqs(soup):
     for cc, fulfills in ats.items():  # handle @
         keep = True  # only remove if it matches at least one other
 
-        def add_reqs(course):
+        def add_reqs(course: Course) -> None:
             nonlocal keep
 
             if course in reqs:
@@ -83,7 +84,12 @@ def get_reqs(soup):
     return reqs, courses
 
 
-def print_dups(reqs, courses, min=2, quiet=False):
+def print_dups(
+    reqs: Dict[str, Set[str]],
+    courses: Dict[Course, str],
+    min: int = 2,
+    quiet: bool = False,
+) -> None:
     for cc, reqlist in sorted(reqs.items()):
         if len(reqlist) >= min:
             cname = courses.get(cc)
@@ -99,7 +105,7 @@ def print_dups(reqs, courses, min=2, quiet=False):
                 print()
 
 
-def run(file):
+def run(file: str) -> Tuple[Dict[Course, str], Dict[str, Set[str]]]:
     bodysrc = None
     basedir = None
 
@@ -121,7 +127,7 @@ def run(file):
     return get_reqs(mainsoup)
 
 
-def main():
+def main() -> None:
     p = ArgumentParser(
         description="Parses Ellucian Degree Works to find \
                                     courses that satisfy requirements",
